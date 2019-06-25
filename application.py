@@ -39,6 +39,7 @@ socketio = SocketIO(app)
 thread = Thread()
 thread_stop_event = Event()
 
+
 class RandomThread(Thread):
     def __init__(self):
         self.delay = 1
