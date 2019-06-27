@@ -54,7 +54,7 @@ LOGGER = logging.getLogger()
 LOGGER.addHandler(CONSOLE_HANDLER)
 LOGGER.setLevel('DEBUG')
 
-global SEND_message, message_queues, outputs, object_dictionary, SERVER_IP, SERVER_PORT, FROM_PATH, TO_PATH, message
+global SEND_message, message_queues, outputs, object_dictionary, SERVER_IP, SERVER_PORT, FROM_PATH, TO_PATH, message, report_checkbox, success_checkbox, failure_checkbox, error_response
 SEND_message = None
 message_queues = {}
 outputs = []
@@ -105,13 +105,13 @@ class RandomThread(Thread):
     def send_msg(self):
         """ Formats and puts the MSRP message into the queue for sending to the server. """
 
-        logging.debug(f'Sucess report status: {self.success_checkbox}')
-        logging.debug(f'Sucess report status: {self.failure_checkbox}')
+        global SEND_message, TO_PATH, FROM_PATH, message, report_checkbox, success_checkbox, failure_checkbox, error_response
+
+        logging.debug(f'Sucess report status: {success_checkbox}')
+        logging.debug(f'Sucess report status: {failure_checkbox}')
         logging.debug('Creating new message to send.')
-        global SEND_message, to_path, from_path, message
-        # to_path = e1.get().rstrip()
-        # from_path = e2.get().rstrip()
-        # message = e3.get("1.0", tk.END).rstrip()
+
+
         transaction_id = uuid4()
         transaction_id = str(transaction_id)[:15]
         transaction_id = transaction_id.replace('-', '')
@@ -122,15 +122,15 @@ class RandomThread(Thread):
         content_type = 'text/plain'
 
         SEND_message = f'MSRP {transaction_id} SEND\r\n'
-        SEND_message += f'To-Path: {to_path}\r\n'
-        SEND_message += f'From-Path: {from_path}\r\n'
+        SEND_message += f'To-Path: {TO_PATH}\r\n'
+        SEND_message += f'From-Path: {FROM_PATH}\r\n'
         SEND_message += f'Message-ID: {message_id}\r\n'
-        if self.report_checkbox:
-            if self.success_checkbox:
+        if report_checkbox:
+            if success_checkbox:
                 SEND_message += f'Success-Report: yes\r\n'
             else:
                 SEND_message += f'Success-Report: no\r\n'
-            if self.failure_checkbox:
+            if failure_checkbox:
                 SEND_message += f'Failure-Report: yes\r\n'
             else:
                 SEND_message += f'Failure-Report: no\r\n'
@@ -219,22 +219,22 @@ class RandomThread(Thread):
                     else:
                         response_code = scratch[2]
                 else:
-                    scratch = line.split(":")
+                    scratch = line.split(" ")
                     logging.debug(f'Print line debug: {scratch}')
-                    if scratch[0] == "To-Path":
+                    if scratch[0] == "To-Path:":
                         to_path = scratch[1].strip()
-                    elif scratch[0] == "From-Path":
+                    elif scratch[0] == "From-Path:":
                         from_path = scratch[1].strip()
-                    elif scratch[0] == "Message-ID":
+                    elif scratch[0] == "Message-ID:":
                         message_id = scratch[1].strip()
-                    elif scratch[0] == "Content-Type":
+                    elif scratch[0] == "Content-Type:":
                         content_type = scratch[1].strip()
-                    elif scratch[0] == "Byte-Range":
+                    elif scratch[0] == "Byte-Range:":
                         byte_range = scratch[1].split("/")[1].strip()
-                    elif scratch[0] == "Success-Report":
+                    elif scratch[0] == "Success-Report:":
                         success_report = scratch[1].strip()
                         logging.debug(f'Success report decoded as: {success_report}')
-                    elif scratch[0] == "Failure-Report":
+                    elif scratch[0] == "Failure-Report:":
                         failure_report = scratch[1].strip()
                     elif scratch[0] == "\r\n":
                         pass
@@ -268,7 +268,7 @@ class RandomThread(Thread):
     def server_content(self):
         """ Starts and manages main TCP socket connection to the server. """
 
-        global SEND_message, message_queues, outputs, SERVER_IP, SERVER_PORT
+        global SEND_message, message_queues, outputs, SERVER_IP, SERVER_PORT, report_checkbox, success_checkbox, failure_checkbox, error_response
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         client.connect((SERVER_IP, SERVER_PORT))
@@ -303,7 +303,7 @@ class RandomThread(Thread):
 
                 decoded_message = self.message_decode(decoded_data)
                 if decoded_message[1] == "SEND":
-                    if self.error_response:
+                    if error_response:
                         self.send_200_response(decoded_message, '400')
                     else:
                         self.send_200_response(decoded_message, '200')
@@ -337,16 +337,24 @@ def index():
 
 @app.route('/submit', methods=['POST'])
 def submit():
-    global to_path, from_path, message
+    global TO_PATH, FROM_PATH, message, report_checkbox, success_checkbox, failure_checkbox, error_response
 
     logging.debug('Entered submit function.')
+    report_checkbox = request.form.get('report_checkbox')
+    success_checkbox = request.form.get('success_checkbox')
+    failure_checkbox = request.form.get('failure_checkbox')
+    error_response = request.form.get('error_response')
+
     if request.form['text_msg']:
-        to_path = request.form['msrp_to_path']
-        from_path = request.form['msrp_from_path']
+        # if request.form['msrp_to_path'] and request.form['msrp_from_path']:
+        #     TO_PATH = request.form['msrp_to_path']
+        #     FROM_PATH = request.form['msrp_from_path']
+
         message = request.form['text_msg']
-        logging.debug(f'Form data: {to_path}, {from_path}, {message}')
+        logging.debug(f'Form data: {TO_PATH}, {FROM_PATH}, {message}')
         thread.send_msg()
 
+    logging.debug(f'report: {report_checkbox} success: {success_checkbox} failure: {failure_checkbox} error {error_response}')
     return render_template('index.html')
 
 
@@ -356,7 +364,7 @@ def test_connect():
     global thread
     print('Client connected')
 
-    #Start the random number generator thread only if the thread has not been started before.
+    # Start the random number generator thread only if the thread has not been started before.
     if not thread.isAlive():
         print("Starting Thread")
         thread = RandomThread()
@@ -365,6 +373,7 @@ def test_connect():
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
+    global thread
     print('Client disconnected')
 
 

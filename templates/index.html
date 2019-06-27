@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 </head>
 <body>
+<!--
 <div class="container">
   <div class="jumbotron">
     <h1>MSRP Client</h1>
@@ -16,6 +17,24 @@
           <p>MSRP To-Path: <input type = "text" name = "msrp_to_path" /></p>
           <p>MSRP From-Path: <input type = "text" name = "msrp_from_path" /></p>
           <p>Text Msg: <input type = "text" name = "text_msg" /></p>
+          <p><input type = "submit" /></p>
+      </form>
+  </div>
+</div>
+-->
+<div class="container">
+  <div class="form-group">
+    <h1>MSRP Client</h1>
+      <form method="post" action="/submit">
+<!--
+          <p>MSRP To-Path: <input type = "text" name = "msrp_to_path" /></p>
+          <p>MSRP From-Path: <input type = "text" name = "msrp_from_path" /></p>
+-->
+          <p>Text Msg: <input type = "text" name = "text_msg" /></p>
+          <p>Add report headers: <input type="checkbox" name="report_checkbox" /></p>
+          <p>Success report yes: <input type="checkbox" name="success_checkbox" /></p>
+          <p>Failure report yes: <input type="checkbox" name="failure_checkbox" /></p>
+          <p>Send 400 response: <input type="checkbox" name="error_response" /></p>
           <p><input type = "submit" /></p>
       </form>
   </div>
