@@ -338,15 +338,15 @@ def index():
 @app.route('/submit', methods=['POST'])
 def submit():
     global to_path, from_path, message
-    #only by sending this page first will the client be connected to the socketio instance
+
     logging.debug('Entered submit function.')
     if request.form['text_msg']:
         to_path = request.form['msrp_to_path']
         from_path = request.form['msrp_from_path']
         message = request.form['text_msg']
-        logging.debug(f'form data: {to_path} {from_path} {message}')
+        logging.debug(f'Form data: {to_path}, {from_path}, {message}')
         thread.send_msg()
-        # render_template()
+
     return render_template('index.html')
 
 
