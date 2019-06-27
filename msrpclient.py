@@ -21,8 +21,6 @@ Updated 13th April 2018
 # Start with a basic flask app webpage.
 from flask_socketio import SocketIO, emit
 from flask import Flask, render_template, url_for, copy_current_request_context, request
-from random import random
-from time import sleep
 from threading import Thread, Event
 import select, socket, queue
 import logging
@@ -38,10 +36,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 app.config['DEBUG'] = True
 
-#turn the flask app into a socketio app
+# turn the flask app into a socketio app
 socketio = SocketIO(app)
 
-#random number Generator Thread
+# random number Generator Thread
 thread = Thread()
 thread_stop_event = Event()
 
@@ -86,6 +84,7 @@ class RandomThread(Thread):
     #         sleep(self.delay)
 
     def update_browser_queue(self, content):
+        logging.debug('Adding to browser queue.')
         self.browser_queue.append(content)
 
     def update_browser(self):
@@ -94,7 +93,7 @@ class RandomThread(Thread):
         if self.browser_queue:
             data = '\r\n'.join(self.browser_queue)
             data = data.replace('\r\n', '<br>')
-
+            logging.debug('Emit to browser using socketio.')
             socketio.emit('newtext', {'text': data}, namespace='/test')
 
             self.browser_queue = []
@@ -333,16 +332,23 @@ class RandomThread(Thread):
 
 @app.route('/')
 def index():
+    return render_template('index.html')
+
+
+@app.route('/submit', methods=['POST'])
+def submit():
     global to_path, from_path, message
     #only by sending this page first will the client be connected to the socketio instance
-    if request == 'POST':
-        if request.form['text_msg']:
-            to_path = request.form['msrp_to_path']
-            from_path = request.form['msrp_from_path']
-            message = request.form['text_msg']
-            RandomThread.send_msg()
-            # render_template()
+    logging.debug('Entered submit function.')
+    if request.form['text_msg']:
+        to_path = request.form['msrp_to_path']
+        from_path = request.form['msrp_from_path']
+        message = request.form['text_msg']
+        logging.debug(f'form data: {to_path} {from_path} {message}')
+        thread.send_msg()
+        # render_template()
     return render_template('index.html')
+
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
@@ -355,6 +361,7 @@ def test_connect():
         print("Starting Thread")
         thread = RandomThread()
         thread.start()
+
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():

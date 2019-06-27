@@ -12,10 +12,12 @@
 <div class="container">
   <div class="jumbotron">
     <h1>MSRP Client</h1>
-      <p>MSRP To-Path: <input type = "text" name = "msrp_to_path" /></p>
-      <p>MSRP From-Path: <input type = "text" name = "msrp_from_path" /></p>
-      <p>Text Msg: <input type = "text" name = "text_msg" /></p>
-      <p><input type = "submit" /></p>
+      <form method="post" action="/submit">
+          <p>MSRP To-Path: <input type = "text" name = "msrp_to_path" /></p>
+          <p>MSRP From-Path: <input type = "text" name = "msrp_from_path" /></p>
+          <p>Text Msg: <input type = "text" name = "text_msg" /></p>
+          <p><input type = "submit" /></p>
+      </form>
   </div>
 </div>
 
